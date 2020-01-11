@@ -3,14 +3,14 @@ import requests, random, html
 from decouple import config
 from pprint import pprint
 
+# Naver API Papago NMT API ex
+from papago_translate import Translate
 
 # import flask
 # import
 app = Flask(__name__)
 
 #https://api.telegram.org/bot905758054:AAFHVuWpqPzlB69ynoIKIbfH1u2-tLbV68A/setWebhook?url=https://bdabb82e.ngrok.io/
-
-
 
 #https://api.telegram.org/bot905758054:AAFHVuWpqPzlB69ynoIKIbfH1u2-tLbV68A/METHOD_NAME
 
@@ -21,6 +21,11 @@ token = config("TELEGRAM_BOT_TOKEN")
 chat_id = config("CHAT_ID")
 key = config("GOOGLE_TOKEN")
 
+# Papago API key
+client_id = config("NAVER_NMT_CLIENT_ID")
+client_secret = config("NAVER_NMT_CLIENT_SECRET")
+
+
 google_url = "https://translation.googleapis.com/language/translate/v2"
 
 # 사용자의 id 값 찾기 
@@ -28,6 +33,16 @@ google_url = "https://translation.googleapis.com/language/translate/v2"
 # 나의 챗 아이디 (chat id)
 # 709075583
 # sendMessage
+
+#def send_start_message():
+
+def translate_message(text):
+    t = Translate(client_id, client_secret)
+    translated_msg = t.nmt_translate(text)
+
+    return translated_msg
+
+
 @app.route('/')
 def hello_world():
     return 'Hello, World!'
@@ -52,7 +67,7 @@ def send():
 @app.route(f'/{token}', methods = ['POST'])
 def telegram():
     # 1. 메아리 기능
-    pprint(request.get_json())
+    #pprint(request.get_json())
     # 2. user id // msg 
     chat_id = request.get_json().get('message').get('from').get('id')
     message = request.get_json().get('message').get('text')
@@ -67,21 +82,35 @@ def telegram():
         #     result = random.randint(1, 40)
         # requests.get(f'{url}/bot{token}/sendMessage?chat_id={chat_id}&text={result}')
     elif message[:4] == '/번역 ':
+        
+        # translated_data = {
+        #     'q': message[4:],
+        #     'source': 'ko',
+        #     'target': 'en'
+        # }
 
-        translate_data = {
-            'q': message[4:],
-            'source': 'ko',
-            'target': 'en'
-        }
+        to_translate = message[4:] # 번역할 한국 문장
 
-        response = requests.post(f'{google_url}?key={key}', translate_data).json()
+        translated_data = translate_message(to_translate)
+
+        result = translated_data
+        
+        #response = requests.post(f'{google_url}?key={key}', translated_data).json()
+
+        #
         
         # result = response.get('data').get('translations')[0].get('translatedText')
 
-        result = html.unescape(response.get('data').get('translations')[0].get('translatedText'))
+        #result = html.unescape(response.get('data').get('translations')[0].get('translatedText'))
 
     else:
-        result = message
+        #result = message
+
+        to_translate = message # 번역할 한국 문장
+
+        translated_data = translate_message(to_translate)
+
+        result = translated_data
 
         # requests.get(f'{url}/bot{token}/sendMessage?chat_id={chat_id}&text={message}')
     
